@@ -21,7 +21,7 @@ def run(lines):
     return
 
 
-def test(lines):
+def mock(lines):
     return run(lines)
 
 
@@ -30,10 +30,10 @@ def parse_data(data):
 
 
 if __name__ == "__main__":
-    test_answer = test(parse_data(TEST_INPUT))
+    mock_answer = mock(parse_data(TEST_INPUT))
     print(f"[TEST] Expected answer: {TEST_ANSWER}")
-    print(f"[TEST] Actual answer: {test_answer}")
-    print(f"[TEST] {'PASSED' if test_answer == TEST_ANSWER else 'FAILED'}")
+    print(f"[TEST] Actual answer: {mock_answer}")
+    print(f"[TEST] {'PASSED' if mock_answer == TEST_ANSWER else 'FAILED'}")
 
     answer = run(parse_data(Path("input.txt").read_text()))
     print(f"[RUN] answer: {answer}")
