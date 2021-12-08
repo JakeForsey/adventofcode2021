@@ -11,6 +11,7 @@ pytest = "*"
 jupyter = "*"
 numpy = "*"
 matplotlib = "*"
+ortools = "*"
 
 [requires]
 python_version = "3.8"
