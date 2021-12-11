@@ -43,7 +43,7 @@ if __name__ == "__main__":
 def main(day: int):
     url = URL_FORMAT.format(day=day)
     cookie = Path(".env").read_text()
-    day_directory = Path(f"day{day}")
+    day_directory = Path(f"day{str(day).zfill(2)}")
     day_directory.mkdir(exist_ok=True)
     day_input_path = day_directory / Path("input.txt")
     day_main_path = day_directory / Path("main.py")
