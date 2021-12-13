@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import matplotlib.pyplot as plt
 import numpy as np
 
 
@@ -25,7 +26,7 @@ TEST_INPUT = """6,10
 fold along y=7
 fold along x=5
 """
-TEST_ANSWER = 17
+TEST_ANSWER = -1  # Test answer is LRFJBJEH but is hard to test
 
 
 def run(lines):
@@ -51,7 +52,7 @@ def run(lines):
     for y, x in coords:
         paper[y, x] = True
 
-    for axis, position in folds[:1]:
+    for axis, position in folds:
         shape = list(paper.shape)
         shape[axis] = position
         p1 = paper[:shape[0], :shape[1]]
@@ -68,9 +69,10 @@ def run(lines):
             constant_values=0,
         )
         paper = p1 | p2
-        break
 
-    return paper.sum()
+    plt.imshow(paper)
+    plt.show()
+    return -1
 
 
 def mock(lines):
