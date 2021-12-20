@@ -57,30 +57,6 @@ BINARY_TO_OPERATOR = {
 DEBUG = True
 
 
-def greater_than(ab):
-    a, b = ab
-    if a > b:
-        return 1
-    else:
-        return 0
-
-
-def less_than(ab):
-    a, b = ab
-    if a < b:
-        return 1
-    else:
-        return 0
-
-
-def equal_to(ab):
-    a, b = ab
-    if a == b:
-        return 1
-    else:
-        return 0
-
-
 class C:
     PINK = '\033[95m'
     BLUE = '\033[94m'
@@ -91,6 +67,21 @@ class C:
     END = '\033[0m'
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
+
+
+def greater_than(ab):
+    a, b = ab
+    return int(a > b)
+
+
+def less_than(ab):
+    a, b = ab
+    return int(a < b)
+
+
+def equal_to(ab):
+    a, b = ab
+    return int(a == b)
 
 
 def to_binary(string):
@@ -132,19 +123,32 @@ def read_literal(binary):
 # assert read_literal("101111111000101000") == (2021, "000")
 
 CLOSE = "ZZZ"
-E = 9999999999
+
+
+class Counter:
+    def __init__(self, num):
+        self.num = num
+
+    def decrement(self):
+        if self.num is not None:
+            self.num -= 1
+        return self
+
+    @property
+    def count(self):
+        return float("inf") if self.num is None else self.num
 
 
 def run(lines):
     binary = to_binary(lines[0])
 
     result = ""
-    todo = [(binary, E)]
+    todo = [(binary, Counter(None))]
     while todo:
         binary, counter = todo.pop()
-        if counter <= 0:
+        if counter.count <= 0:
             result += "]),"
-            todo.append((binary, E))
+            todo.append((binary, Counter(None)))
             continue
         if binary == CLOSE:
             result += "]),"
@@ -163,13 +167,12 @@ def run(lines):
         if type_id == "100":  # 4
             # Parse Literal (append one)
             literal, rest = read_literal(rest)
-            todo.append((rest, counter - 1))
+            todo.append((rest, counter.decrement()))
             result += f"{literal},"
 
         else:
             result += f"{BINARY_TO_OPERATOR[type_id]}(["
 
-            # Parse operator (append two)
             mode = rest[0]
             if DEBUG: print(C.YELLOW + mode + C.END, end="")
             if mode == "0":
@@ -179,9 +182,9 @@ def run(lines):
                 end = 16 + length
                 left = rest[16: end]
                 if DEBUG: print(left, end="")
-                todo.append((rest[end:], counter - 1))
-                todo.append((CLOSE, E))
-                todo.append((left, E))
+                todo.append((rest[end:], counter.decrement()))
+                todo.append((CLOSE, Counter(None)))
+                todo.append((left, Counter(None)))
 
             else:
                 length_binary = rest[1: 12]
@@ -189,7 +192,7 @@ def run(lines):
                 counter = int(length_binary, 2)
                 left = rest[12:]
                 if DEBUG: print(left, end="")
-                todo.append((left, counter))
+                todo.append((left, Counter(counter)))
 
     print(result.count("["), result.count("]"))
 
