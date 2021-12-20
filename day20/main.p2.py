@@ -8,16 +8,7 @@ TEST_INPUT = """..#.#..#####.#.#.#.###.##.....###.##.#..###.####..#####..#....#.
 ##..#
 ..#..
 ..###"""
-TEST_ANSWER = 35
-
-
-def pprint(coords):
-    (h1, h2), (w1, w2) = min_max(coords)
-    print()
-    for y in range(h1, h2 + 1):
-        for x in range(w1, w2 + 1):
-            print(coords[(x, y)], end="")
-        print()
+TEST_ANSWER = 3351
 
 
 def yield_kernel(point):
@@ -56,11 +47,12 @@ def get_value(coords, point, enhancements):
 
 
 def run(lines, debug=False):
+    steps = 50
     enhancements = lines[0]
 
     # Start with a large, padded board
     h, w = len(lines[2:]), len(lines[2])
-    padding = 10
+    padding = steps * 2 + 1
     coords = {}
     for y in range(-padding, h + padding):
         for x in range(-padding, w + padding):
@@ -71,10 +63,9 @@ def run(lines, debug=False):
         for x, c in enumerate(row):
             coords[(x, y)] = c
 
-    if debug: pprint(coords)
-
     # Enhance twice
-    for step in range(2):
+    for step in range(steps):
+        print(f"{step} / {steps}")
         new_coords = {}
         for point in coords:
             value = get_value(coords, point, enhancements)
@@ -82,7 +73,6 @@ def run(lines, debug=False):
                 new_coords[point] = value
 
         coords = new_coords
-        if debug: pprint(coords)
 
     return len([c for c in coords.values() if c == "#"])
 
