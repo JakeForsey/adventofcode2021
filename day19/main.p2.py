@@ -141,7 +141,7 @@ TEST_INPUT = """--- scanner 0 ---
 891,-625,532
 -652,-548,-490
 30,-46,-14"""
-TEST_ANSWER = 79
+TEST_ANSWER = 3621
 
 
 def rotations():
@@ -191,13 +191,16 @@ def attempt_match(transformed_coords, reference_vectors):
             intersection = vector & reference_vector
             if len(intersection) >= 11:  # intersection does not include (0, 0, 0)
                 translation = vector_from(transformed_coord, reference_coord)
-                return set(translate(coord, translation) for coord in transformed_coords)
+                return set(translate(coord, translation) for coord in transformed_coords), translation
+    return None, None
 
 
 def transform_coords(coords, other_coords):
     """
     Find the transform and translation that maps from scanner to other scanner
     """
+    # reference_vectors could be computed once upfront, and then added to, rather
+    # than computing it each time here.
     reference_vectors = []
     for reference_coord in other_coords:
         vector = create_reference_vectors(reference_coord, other_coords)
@@ -205,10 +208,10 @@ def transform_coords(coords, other_coords):
 
     for i, rotation_matrix in enumerate(rotations()):
         transformed_coords = set(apply_rotation(rotation_matrix, coord) for coord in coords)
-        out = attempt_match(transformed_coords, reference_vectors)
+        out, scanner_position = attempt_match(transformed_coords, reference_vectors)
         if out is not None:
-            return out
-    return set()
+            return out, scanner_position
+    return set(), None
 
 
 def run(lines):
@@ -223,17 +226,30 @@ def run(lines):
             x, y, z = beacons.split(",")
             scanners[scanner_id].add((int(x), int(y), int(z)))
 
+    scanner_positions = []
     final = scanners.pop("0")
     todo = list(scanners.items())
     while todo:
         scanner, coords = todo.pop()
-        transformed_coords = transform_coords(coords, final)
+        transformed_coords, scanner_position = transform_coords(coords, final)
         if transformed_coords:
+            scanner_positions.append(scanner_position)
             final = final | transformed_coords
         else:
             todo.insert(0, (scanner, coords))
 
-    return len(final)
+    max_distance = -1
+    for src in scanner_positions:
+        for dst in scanner_positions:
+            if src == dst:
+                continue
+            distance = sum(
+                [abs(src[i] - dst[i]) for i in range(len(src))]
+            )
+            if distance > max_distance:
+                max_distance = distance
+
+    return max_distance
 
 
 def mock(lines):
