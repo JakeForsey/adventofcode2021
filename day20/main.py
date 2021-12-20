@@ -1,6 +1,8 @@
 from collections import defaultdict
 from pathlib import Path
+import sys
 
+sys.setrecursionlimit(100000)
 
 TEST_INPUT = """..#.#..#####.#.#.#.###.##.....###.##.#..###.####..#####..#....#..#..##..###..######.###...####..#..#####..##..#.#####...##.#.#..#.##..#.#......#.###.######.###.####...#.##.##..#..#..#####.....#.#....###..#.##......#.....#..#..#..##..#...##.######.####.####.#.#...#.......#..#.#.#...####.##.#......#..#...##.#.##..#...##.#.##..###.#......#.#.......#.#.#.####.###.##...#.....####.#..#..#.##.#....##..#.####....##...##..#...#......#.#.......#.......##..####..#...#.#.#...##..#.#..###..#####........#..####......#..#
 
@@ -15,8 +17,8 @@ TEST_ANSWER = 35
 def pprint(coords):
     (h1, h2), (w1, w2) = min_max(coords)
     print()
-    for y in range(h1 - 1, h2 + 2):
-        for x in range(w1 - 1, w2 + 2):
+    for y in range(h1, h2 + 1):
+        for x in range(w1, w2 + 1):
             print(coords[(x, y)], end="")
         print()
 
@@ -28,48 +30,6 @@ def yield_kernel(point):
             yield x + xi, y + yi
 
 
-def get_kernel(point, coords):
-    kernel = []
-    for point in yield_kernel(point):
-        if point not in coords:
-            kernel.append(None)
-        else:
-            kernel.append(coords[point])
-    return kernel
-
-
-def value_from_kernel(kernel, enhancements, default_value):
-    if all(k is None for k in kernel):
-        return default_value
-    elif None in kernel:
-        return None
-    idx = to_index(kernel)
-    return enhancements[idx]
-
-
-def update(coords, enhancements, default_value):
-    (h1, h2), (w1, w2) = min_max(coords)
-
-    todo = []
-    for y in range(h1 - 2, h2 + 3):
-        for x in range(w1 - 2, w2 + 3):
-            todo.append((x, y))
-
-    while todo:
-        print(len(todo))
-        point = todo.pop()
-        value = coords.get(point, None)
-        if value is not None:
-            continue
-        kernel = get_kernel(point, coords)
-        value = value_from_kernel(kernel, enhancements, default_value)
-        if value is None:
-            todo.insert(0, point)
-        else:
-            coords[point] = value
-    return next_coords
-
-
 def min_max(coords):
     ys = [y for (_, y), c in coords.items()]
     xs = [x for (x, y), c in coords.items()]
@@ -79,38 +39,55 @@ def min_max(coords):
     )
 
 
-def to_binary(kernel):
-    kernel = "".join(str(w) for w in kernel)
-    return kernel\
-        .replace(".", "0")\
-        .replace("#", "1")
+def to_index(kernel):
+    def _to_binary():
+        return "".join(str(w) for w in kernel) \
+            .replace(".", "0") \
+            .replace("#", "1")
+
+    return int(_to_binary(), 2)
 
 
-def to_index(kernel_string):
-    return int(to_binary(kernel_string), 2)
+def get_value(coords, point, enhancements):
+    kernel = []
+    for kernel_point in yield_kernel(point):
+        if kernel_point not in coords:
+            # Skip points too close to the edge
+            return None
+        kernel.append(coords[kernel_point])
+    return enhancements[to_index(kernel)]
 
 
 def run(lines, debug=False):
     enhancements = lines[0]
-    print(len(enhancements))
-    coords = defaultdict(lambda: "+")
+
+    # Start with a large, padded board
+    h, w = len(lines[2:]), len(lines[2])
+    padding = 10
+    coords = {}
+    for y in range(-padding, h + padding):
+        for x in range(-padding, w + padding):
+            coords[(x, y)] = "."
+
+    # Override the padding where data is available
     for y, row in enumerate(lines[2:]):
         for x, c in enumerate(row):
             coords[(x, y)] = c
 
     if debug: pprint(coords)
 
-    default_next_idx = 0
-    default_value = enhancements[default_next_idx]
+    # Enhance twice
     for step in range(2):
-        print(f"{step + 1} / 2")
-        coords = update(coords, enhancements, default_value)
+        new_coords = {}
+        for point in coords:
+            value = get_value(coords, point, enhancements)
+            if value is not None:
+                new_coords[point] = value
 
+        coords = new_coords
         if debug: pprint(coords)
-        default_next_idx = 512 if default_value == "#" else 0
-        default_value = enhancements[default_next_idx]
 
-    return len([c for c in coords.values() if c == "#" or (c == "+" and default == "#")])
+    return len([c for c in coords.values() if c == "#"])
 
 
 def mock(lines):
@@ -129,8 +106,3 @@ if __name__ == "__main__":
 
     answer = run(parse_data(Path("input.txt").read_text()))
     print(f"[RUN] answer: {answer}")
-    # Guess:
-    #  * 5402  (too high)
-    #  * 53... (too high)
-    #  * 5311  (no comment)
-    #  * 5539  (no comment)
